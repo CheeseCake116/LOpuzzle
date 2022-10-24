@@ -1,7 +1,8 @@
 # LOpuzzle
 
 ## 소개
-<img src="https://user-images.githubusercontent.com/33691228/197440361-065b5bb0-c835-4925-ae15-e1bdb381bb7f.jpg"/>
+<img src="https://user-images.githubusercontent.com/33691228/197440361-065b5bb0-c835-4925-ae15-e1bdb381bb7f.jpg"/><br/>
+영상 : https://youtu.be/GuArofk79eU<br/>
 <br/>
 모바일 게임 "라스트 오리진"에 등장하는 퍼즐을 자동으로 풀어주는 시뮬레이터.<br/>
 퍼즐은 게임 업데이트나 자동전투 중에 실행할 수 있으며, 방식은 3x3 슬라이드 퍼즐이다.<br/>
