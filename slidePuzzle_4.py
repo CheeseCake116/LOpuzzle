@@ -9,42 +9,43 @@ from PIL import ImageGrab, Image, ImageQt
 import cv2
 from tempfile import TemporaryDirectory
 
-class WindowClass(QMainWindow) :
-    puzzle = [[0, 1, 2], [3, 4, 5], [6, 7, 8]] # 현재 퍼즐 상태
-    puzzle_origin = [] # "원래대로" 버튼 눌렀을 때 puzzle에 할당할 퍼즐 기본 상태
-    answer = [[0, 1, 2], [3, 4, 5], [6, 7, 8]] # 답지
-    way = [] # 해답
-    way_pos = 0 # 현재 이동할 조각이 way에서 몇번째인지
-    move_count = 0 # 이동한 횟수
-    move_temp = [] # 퍼즐이 움직이는 동안에 다른 퍼즐을 클릭한 경우 예약해둠
-    can_move = 1 # 퍼즐을 직접 손으로 움직일 수 있는 상태인지
-    assign_list = [0,0,0,0,0,0,1,0,0] # 배치된 퍼즐 여부
-    puzzle_select = 0 # 현재 퍼즐 번호
-    puzzle_select_limit = -1 # 퍼즐 번호 한계
-    unlockImage = 0 # 잠금 상태인지 이미지 번호로 구별
-    select = -1 # 현재 선택된 이미지 번호
+
+class WindowClass(QMainWindow):
+    puzzle = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]  # 현재 퍼즐 상태
+    puzzle_origin = []  # "원래대로" 버튼 눌렀을 때 puzzle에 할당할 퍼즐 기본 상태
+    answer = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]  # 답지
+    way = []  # 해답
+    way_pos = 0  # 현재 이동할 조각이 way에서 몇번째인지
+    move_count = 0  # 이동한 횟수
+    move_temp = []  # 퍼즐이 움직이는 동안에 다른 퍼즐을 클릭한 경우 예약해둠
+    can_move = 1  # 퍼즐을 직접 손으로 움직일 수 있는 상태인지
+    assign_list = [0, 0, 0, 0, 0, 0, 1, 0, 0]  # 배치된 퍼즐 여부
+    puzzle_select = 0  # 현재 퍼즐 번호
+    puzzleCount = 0  # 퍼즐 갯수
+    unlockImage = 0  # 잠금 상태인지 이미지 번호로 구별
+    select = -1  # 현재 선택된 이미지 번호
     mode = 0  # 0 : 배치중 1 : 실행중 2 : 풀이중
     # 각 버튼이 사용가능한지 여부
     # 0시작, 1정지, 2이전, 3다음, 4풀이, 5배치완료, 6랜덤배치, 7불러오기, 8화살표, 9설정
     enabledButton = [False, False, False, False, False, False, True, True, True, True]
     # 스레드 변수. 스레드 생상시 아래 변수에 할당됨
-    solvethread = None # "풀이확인" 버튼 누르면 생성
-    movethread = None # "시작" 버튼 누르면 생성
-    movethread2 = None # movethread가 퍼즐 움직일 때마다 생성
-    resolution = {0 : [960, 540], 1 : [1280, 720], 2 : [1600, 900]} # 해상도 dictionary
-    res_select = 0 # 현재 선택된 해상도 값
-    puzzleSize = {0 : 3, 1 : 4, 2 : 5}
-    size_select = 0 # 현재 선택된 퍼즐 크기. 3x3, 4x4, 5x5
+    solvethread = None  # "풀이확인" 버튼 누르면 생성
+    movethread = None  # "시작" 버튼 누르면 생성
+    movethread2 = None  # movethread가 퍼즐 움직일 때마다 생성
+    resolution = {0: [960, 540], 1: [1280, 720], 2: [1600, 900]}  # 해상도 dictionary
+    res_select = 0  # 현재 선택된 해상도 값
+    puzzleSize = {0: 3, 1: 4, 2: 5}
+    size_select = 0  # 현재 선택된 퍼즐 크기. 3x3, 4x4, 5x5
     psize = puzzleSize[size_select]
-    temp_size1 = int(624 / 3) # 왼쪽 퍼즐 크기
-    temp_size2 = int(417 / 3) # 오른쪽 퍼즐 크기
-    setting_on = 0 # 옵션창 꺼져있는지
-    inst_num = 0 # 현재 Instruction 몇 번인지
+    temp_size1 = int(624 / 3)  # 왼쪽 퍼즐 크기
+    temp_size2 = int(417 / 3)  # 오른쪽 퍼즐 크기
+    setting_on = 0  # 옵션창 꺼져있는지
+    inst_num = 0  # 현재 Instruction 몇 번인지
     # 현재 실행파일 위치.
     # os.chdir로 위치 바뀌기 전에 미리 저장
     origin_addr = os.getcwd()
 
-    def __init__(self) : # 이미지 및 라벨 생성
+    def __init__(self):  # 이미지 및 라벨 생성
         super().__init__()
 
         try:
@@ -57,58 +58,23 @@ class WindowClass(QMainWindow) :
 
         # 기본배경화면 일러스트 로딩
         # __init__에서 PIL.image로 이미지 로딩 -> setting에서 Image.resize로 크기 조절 -> QLabel에 setPixmap으로 할당
-        self.qPixmap_back = Image.open("PuzzleImage/Background1.png")
+        self.backgroundImage = Image.open("PuzzleImage/Background1.png")
         self.qLabel_back = QLabel('', self)
 
         # 조각이 배치되지 않은 label에 사용
         self.emptyPixmap = QPixmap()
 
         # 조각 이미지
-        self.qPixmap = []
-        self.qPixmapVar = [[None] * (self.psize ** 2), [None] * (self.psize ** 2)]
+        self.pieceImages = []
+        self.picePixmaps = [[None] * (self.psize ** 2), [None] * (self.psize ** 2)]
 
         # 완성본 이미지
-        self.qPixmap7 = []
-        self.qPixmapVar7 = []
+        self.compImages = []
+        self.compPixmaps = []
 
-        # 'custom', 'Complete' 이미지 불러오기
-        file_list = os.listdir(self.origin_addr + '\custom')
-        self.puzzle_select_limit = -1
-        i = 0
-        for num in range(6 + len(file_list)):
-            if num < 6:
-                im = Image.open('PuzzleImage/Complete/Comp' + str(num + 1) + '.png')
-            else:
-                try:
-                    im = Image.open(self.origin_addr + '\custom\\' + file_list[num - 6])
-                except:
-                    continue
-            width, height = im.size
-            if width < height:
-                size = width # 정사각형 한 변 길이
-                pos = [0, int((height - size) / 2)] # 이미지에서 정사각형 왼쪽 위 좌표
-            else:
-                size = height
-                pos = [int((width - size) / 2), 0]
-
-            croppedSize = int(size / self.psize) # 조각 한 개 크기
-            bbox = (pos[0], pos[1], pos[0] + croppedSize * self.psize, pos[1] + croppedSize * self.psize)
-            croppedImage = im.crop(bbox)
-            self.qPixmap7.append(croppedImage)
-            self.qPixmapVar7.append(None)
-
-            self.qPixmap.append([])
-            for j in range(self.psize ** 2):
-                if j == self.psize ** 2 - self.psize:
-                    self.qPixmap[i].append(QPixmap())
-                    continue
-                left = pos[0] + (j % self.psize) * croppedSize
-                top = pos[1] + int(j / self.psize) * croppedSize
-                bbox = (left, top, left + croppedSize, top + croppedSize)
-                croppedImage = im.crop(bbox)
-                self.qPixmap[i].append(croppedImage)
-            self.puzzle_select_limit += 1
-            i += 1
+        # 'custom', 'Complete' 이미지를 Image 객체로 불러오기
+        # compImages, compPixmaps, puzzleCount 변수를 완성함
+        self.loadPuzzleImages()
 
         # 조각 이미지 표시할 라벨 로딩
         self.label = []  # 왼쪽 이미지 라벨
@@ -129,7 +95,7 @@ class WindowClass(QMainWindow) :
         self.qPixmap2 = []
         self.qPixmapVar2 = []
         for i in range(7):
-            self.qPixmap2.append(Image.open("PuzzleImage/Instruction"+str(i+1)+".png"))
+            self.qPixmap2.append(Image.open("PuzzleImage/Instruction" + str(i + 1) + ".png"))
             self.qPixmapVar2.append(None)
         self.label4 = QLabel("", self)
 
@@ -240,6 +206,53 @@ class WindowClass(QMainWindow) :
 
         self.setting()
 
+    # 'custom', 'Complete' 이미지를 Image 객체로 불러오기
+    def loadPuzzleImages(self):
+        custom_list = os.listdir(self.origin_addr + '\custom')
+        address_list = []
+        for i in range(6):
+            address_list.append('PuzzleImage/Complete/Comp' + str(i + 1) + '.png')
+        for customFile in custom_list:
+            address_list.append(self.origin_addr + '\\custom\\' + customFile)
+
+        self.puzzleCount = 0
+        for file in address_list:
+            # 불러올 수 없는 이미지가 있을 수도 있으니 체크
+            try:
+                im = Image.open(file)
+            except:
+                continue
+
+            # 이미지를 정사각형 모양으로 자르기 위한 위치 구하기
+            width, height = im.size
+            if width < height:
+                size = width  # 정사각형 한 변 길이
+                pos = [0, int((height - size) / 2)]  # 이미지에서 정사각형 왼쪽 위 좌표
+            else:
+                size = height
+                pos = [int((width - size) / 2), 0]
+
+            # 조각 한 개 크기는 정수로
+            # 완성본 크기는 조각 한 개 크기의 배수로
+            croppedSize = int(size / self.psize)
+            bbox = (pos[0], pos[1], pos[0] + croppedSize * self.psize, pos[1] + croppedSize * self.psize)
+            self.compImages.append(im.crop(bbox).copy())
+
+            # 조각 이미지 만들기
+            imageList = []
+            for j in range(self.psize ** 2):
+                # 좌측 하단은 공백 Pixmap 할당
+                if j == self.psize ** 2 - self.psize:
+                    imageList.append(None)
+                    continue
+
+                left = pos[0] + (j % self.psize) * croppedSize
+                top = pos[1] + int(j / self.psize) * croppedSize
+                bbox = (left, top, left + croppedSize, top + croppedSize)
+                imageList.append(im.crop(bbox).copy())
+            self.pieceImages.append(imageList)
+            self.puzzleCount += 1
+
     # 이미지에 클릭 속성 넣기
     def clickable(self, widget):
         class Filter(QObject):
@@ -262,8 +275,8 @@ class WindowClass(QMainWindow) :
         # 기본배경화면 일러스트 설정
         self.qLabel_back.move(0, 0)
         self.qLabel_back.resize(self.adjustResolution(1600), self.adjustResolution(900))
-        Background_resize = self.qPixmap_back.resize((self.adjustResolution(1600), self.adjustResolution(900)),
-                                                     Image.ANTIALIAS)
+        Background_resize = self.backgroundImage.resize((self.adjustResolution(1600), self.adjustResolution(900)),
+                                                        Image.Resampling.LANCZOS)
         self.qLabel_back.setPixmap(ImageQt.toqpixmap(Background_resize))
 
         self.psize = self.puzzleSize[self.size_select]
@@ -272,24 +285,29 @@ class WindowClass(QMainWindow) :
 
         # 원본에서 크기 변형한 조각을 저장할 변수
         for i in range(self.psize ** 2):
-            if i == self.psize ** 2 - self.psize:
-                self.qPixmapVar[0][i] = self.qPixmap[self.puzzle_select][i]
-                self.qPixmapVar[1][i] = self.qPixmap[self.puzzle_select][i]
+            # 공백 자리면 공백 이미지 할당
+            if self.pieceImages[self.puzzle_select][i] is None:
+                self.picePixmaps[0][i] = self.emptyPixmap
+                self.picePixmaps[1][i] = self.emptyPixmap
                 continue
 
-            img1 = self.qPixmap[self.puzzle_select][i].resize(
-                (self.adjustResolution(self.temp_size1), self.adjustResolution(self.temp_size1)), Image.ANTIALIAS)
-            img2 = self.qPixmap[self.puzzle_select][i].resize(
-                (self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2)), Image.ANTIALIAS)
-            self.qPixmapVar[0][i] = ImageQt.toqpixmap(img1)
-            self.qPixmapVar[1][i] = ImageQt.toqpixmap(img2)
+            img1 = self.pieceImages[self.puzzle_select][i].resize(
+                (self.adjustResolution(self.temp_size1), self.adjustResolution(self.temp_size1)),
+                Image.Resampling.LANCZOS)
+            img2 = self.pieceImages[self.puzzle_select][i].resize(
+                (self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2)),
+                Image.Resampling.LANCZOS)
+            self.picePixmaps[0][i] = ImageQt.toqpixmap(img1).copy()
+            self.picePixmaps[1][i] = ImageQt.toqpixmap(img2).copy()
 
         # 완성샷 이미지 로딩
-        for i in range(self.puzzle_select_limit + 1):
-            croppedImage = self.qPixmap7[i].resize(
-                (self.adjustResolution(self.temp_size1) * self.psize, self.adjustResolution(self.temp_size1) * self.psize),
-                Image.ANTIALIAS)
-            self.qPixmapVar7[i] = ImageQt.toqpixmap(croppedImage)
+        for i in range(self.puzzleCount):
+            croppedImage = self.compImages[i].resize(
+                (self.adjustResolution(self.temp_size1) * self.psize,
+                 self.adjustResolution(self.temp_size1) * self.psize),
+                Image.Resampling.LANCZOS)
+            croppedPixmap = ImageQt.toqpixmap(croppedImage)
+            self.compPixmaps.append(croppedPixmap)
 
         # 각 라벨을 배치하고 이미지 할당
         for i in range(self.psize):
@@ -298,7 +316,7 @@ class WindowClass(QMainWindow) :
                     self.adjustResolution(96) + j * self.adjustResolution(self.temp_size1),
                     self.adjustResolution(96) + i * self.adjustResolution(self.temp_size1))
                 if self.assign_list[self.puzzle[i][j]]:
-                    self.label[self.puzzle[i][j]].setPixmap(self.qPixmapVar[0][self.puzzle[i][j]])
+                    self.label[self.puzzle[i][j]].setPixmap(self.picePixmaps[0][self.puzzle[i][j]])
                 else:
                     self.label[self.puzzle[i][j]].setPixmap(self.emptyPixmap)
 
@@ -308,7 +326,7 @@ class WindowClass(QMainWindow) :
                 self.adjustResolution(982) + (i % self.psize) * self.adjustResolution(self.temp_size2),
                 self.adjustResolution(65) + int(i / self.psize) * self.adjustResolution(self.temp_size2))
             self.label2[i].resize(self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2))
-            self.label2[i].setPixmap(self.qPixmapVar[1][i])
+            self.label2[i].setPixmap(self.picePixmaps[1][i])
 
         # 잠금화면으로 나가는 버튼. 화면 중앙 하단에 있음
         self.label3.move(self.adjustResolution(757), self.adjustResolution(798))
@@ -316,7 +334,8 @@ class WindowClass(QMainWindow) :
 
         # 퍼즐 설명 이미지 로딩
         for i in range(7):
-            img = self.qPixmap2[i].resize((self.adjustResolution(683), self.adjustResolution(250)), Image.ANTIALIAS)
+            img = self.qPixmap2[i].resize((self.adjustResolution(683), self.adjustResolution(250)),
+                                          Image.Resampling.LANCZOS)
             self.qPixmapVar2[i] = ImageQt.toqpixmap(img)
         self.label4.move(self.adjustResolution(848), self.adjustResolution(497))
         self.label4.resize(self.adjustResolution(683), self.adjustResolution(250))
@@ -328,7 +347,7 @@ class WindowClass(QMainWindow) :
 
         # 선택한 퍼즐을 나타내는 이미지 로딩
         img = self.qPixmap3.resize(
-            (self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2)), Image.ANTIALIAS)
+            (self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2)), Image.Resampling.LANCZOS)
         self.qPixmapVar3 = ImageQt.toqpixmap(img)
         if self.select == -1:
             self.alpha.move(0, 901)
@@ -344,18 +363,20 @@ class WindowClass(QMainWindow) :
             for j in range(2):
                 if i < 4:
                     img = self.qPixmap4[i][j].resize(
-                        (self.adjustResolution(85), self.adjustResolution(85)), Image.ANTIALIAS)
+                        (self.adjustResolution(85), self.adjustResolution(85)), Image.Resampling.LANCZOS)
                 else:
                     img = self.qPixmap4[i][j].resize(
-                        (self.adjustResolution(152), self.adjustResolution(85)), Image.ANTIALIAS)
+                        (self.adjustResolution(152), self.adjustResolution(85)), Image.Resampling.LANCZOS)
                 self.qPixmapVar4[i][j] = ImageQt.toqpixmap(img)
             if i == 4:
-                for j in range(2,5):
-                    img = self.qPixmap4[i][j].resize((self.adjustResolution(152), self.adjustResolution(85)), Image.ANTIALIAS)
+                for j in range(2, 5):
+                    img = self.qPixmap4[i][j].resize((self.adjustResolution(152), self.adjustResolution(85)),
+                                                     Image.Resampling.LANCZOS)
                     self.qPixmapVar4[i][j] = ImageQt.toqpixmap(img)
             if i == 5:
-                for j in range(2,6):
-                    img = self.qPixmap4[i][j].resize((self.adjustResolution(152), self.adjustResolution(85)), Image.ANTIALIAS)
+                for j in range(2, 6):
+                    img = self.qPixmap4[i][j].resize((self.adjustResolution(152), self.adjustResolution(85)),
+                                                     Image.Resampling.LANCZOS)
                     self.qPixmapVar4[i][j] = ImageQt.toqpixmap(img)
 
         # 버튼에 사용할 라벨 로딩
@@ -388,7 +409,8 @@ class WindowClass(QMainWindow) :
         # 오른쪽 퍼즐 양쪽에 붙은 화살표 로딩
         for i in range(2):
             for j in range(2):
-                img = self.qPixmap5[i][j].resize((self.adjustResolution(132), self.adjustResolution(110)), Image.ANTIALIAS)
+                img = self.qPixmap5[i][j].resize((self.adjustResolution(132), self.adjustResolution(110)),
+                                                 Image.Resampling.LANCZOS)
                 self.qPixmapVar5[i][j] = ImageQt.toqpixmap(img)
 
         # 화살표 라벨 로딩
@@ -396,20 +418,24 @@ class WindowClass(QMainWindow) :
         self.label6[0].move(self.adjustResolution(982 - 132 - 5), self.adjustResolution(65 + 154))
         self.label6[0].resize(self.adjustResolution(132), self.adjustResolution(110))
         self.label6[1].setPixmap(self.qPixmapVar5[1][0])
-        self.label6[1].move(self.adjustResolution(982 + 5) + self.adjustResolution(self.temp_size2) * self.psize, self.adjustResolution(65 + 154))
+        self.label6[1].move(self.adjustResolution(982 + 5) + self.adjustResolution(self.temp_size2) * self.psize,
+                            self.adjustResolution(65 + 154))
         self.label6[1].resize(self.adjustResolution(132), self.adjustResolution(110))
 
         # 옵션창 이미지 로딩
-        for i in range(2): # 톱니바퀴 버튼. qPixmap8[0][0~1]
-            img = self.qPixmap8[0][i].resize((self.adjustResolution(63), self.adjustResolution(63)), Image.ANTIALIAS)
+        for i in range(2):  # 톱니바퀴 버튼. qPixmap8[0][0~1]
+            img = self.qPixmap8[0][i].resize((self.adjustResolution(63), self.adjustResolution(63)),
+                                             Image.Resampling.LANCZOS)
             self.qPixmapVar8[0][i] = ImageQt.toqpixmap(img)
 
-        img = self.qPixmap8[1].resize((self.adjustResolution(672), self.adjustResolution(421)), Image.ANTIALIAS)
+        img = self.qPixmap8[1].resize((self.adjustResolution(672), self.adjustResolution(421)),
+                                      Image.Resampling.LANCZOS)
         self.qPixmapVar8[1] = ImageQt.toqpixmap(img)
 
-        for i in range(2, 4): # 옵션 버튼.
+        for i in range(2, 4):  # 옵션 버튼.
             for j in range(6):
-                img = self.qPixmap8[i][j].resize((self.adjustResolution(117), self.adjustResolution(48)), Image.ANTIALIAS)
+                img = self.qPixmap8[i][j].resize((self.adjustResolution(117), self.adjustResolution(48)),
+                                                 Image.Resampling.LANCZOS)
                 self.qPixmapVar8[i][j] = ImageQt.toqpixmap(img)
 
         # 옵션 라벨 로딩
@@ -421,13 +447,13 @@ class WindowClass(QMainWindow) :
         self.label9[1].move(0, 901)
         self.label9[1].resize(self.adjustResolution(672), self.adjustResolution(421))
 
-        for i in range(2, 4): # 옵션창 버튼들
+        for i in range(2, 4):  # 옵션창 버튼들
             for j in range(3):
                 self.label9[i][j].setPixmap(self.qPixmapVar8[i][j * 2 + 1])
                 self.label9[i][j].move(0, 901)
                 self.label9[i][j].resize(self.adjustResolution(117), self.adjustResolution(48))
 
-        if self.setting_on: # 옵션창 커져있으면
+        if self.setting_on:  # 옵션창 커져있으면
             self.label9[1].move(self.adjustResolution(464), self.adjustResolution(240))
             for i in range(2, 4):
                 for j in range(3):
@@ -440,14 +466,15 @@ class WindowClass(QMainWindow) :
 
         # 잠금화면, 잠금 푼 화면 로딩
         for i in range(2):
-            img = self.qPixmap6[i].resize((self.adjustResolution(1600), self.adjustResolution(900)), Image.ANTIALIAS)
+            img = self.qPixmap6[i].resize((self.adjustResolution(1600), self.adjustResolution(900)),
+                                          Image.Resampling.LANCZOS)
             self.qPixmapVar6[i] = ImageQt.toqpixmap(img)
         self.label7_1.setPixmap(self.qPixmapVar6[0])
-        self.label7_1.move(0, 901) # 0, 0
+        self.label7_1.move(0, 901)  # 0, 0
         self.label7_1.resize(self.adjustResolution(1600), self.adjustResolution(900))
 
         # 퍼즐로 돌아가는 버튼
-        self.label7_2.move(0, 901) # 455, 430
+        self.label7_2.move(0, 901)  # 455, 430
         self.label7_2.resize(self.adjustResolution(83), self.adjustResolution(83))
 
         # 마지막으로 해상도 설정
@@ -472,7 +499,8 @@ class WindowClass(QMainWindow) :
             self.label9[1].move(self.adjustResolution(464), self.adjustResolution(240))
             for i in range(2, 4):
                 for j in range(3):
-                    self.label9[i][j].move(self.adjustResolution(464 + 161 + 149 * j), self.adjustResolution(240 + 100 + 79 * (i-2)))
+                    self.label9[i][j].move(self.adjustResolution(464 + 161 + 149 * j),
+                                           self.adjustResolution(240 + 100 + 79 * (i - 2)))
         elif obj == self.label9[1] or obj == 0:
             self.closeSetting()
         else:
@@ -507,7 +535,7 @@ class WindowClass(QMainWindow) :
         self.label9[3][num].setPixmap(self.qPixmapVar8[3][num * 2])
         self.size_select = num
 
-        self.psize = self.puzzleSize[num] # 3, 4, 5
+        self.psize = self.puzzleSize[num]  # 3, 4, 5
         self.temp_size1 = int(624 / self.psize)
         self.temp_size2 = int(417 / self.psize)
 
@@ -520,49 +548,12 @@ class WindowClass(QMainWindow) :
                 self.puzzle[i].append(i * self.psize + j)
                 self.answer[i].append(i * self.psize + j)
 
-        self.qPixmap = []
-        self.qPixmapVar = [[None] * (self.psize ** 2), [None] * (self.psize ** 2)]
-        self.qPixmap7 = []
-        self.qPixmapVar7 = []
+        self.pieceImages = []
+        self.picePixmaps = [[None] * (self.psize ** 2), [None] * (self.psize ** 2)]
+        self.compImages = []
+        self.compPixmaps = []
 
-        # 'custom' 이미지 불러오기
-        file_list = os.listdir(self.origin_addr + '\custom')
-        self.puzzle_select_limit = -1
-        i = 0
-        for num in range(6 + len(file_list)):
-            if num < 6:
-                im = Image.open('PuzzleImage/Complete/Comp' + str(num + 1) + '.png')
-            else:
-                try:
-                    im = Image.open(self.origin_addr + '\custom\\' + file_list[num - 6])
-                except:
-                    continue
-            width, height = im.size
-            if width < height:
-                size = width
-                pos = [0, int((height - size) / 2)]
-            else:
-                size = height
-                pos = [int((width - size) / 2), 0]
-
-            croppedSize = int(size / self.psize)
-            bbox = (pos[0], pos[1], pos[0] + croppedSize * self.psize, pos[1] + croppedSize * self.psize)
-            croppedImage = im.crop(bbox)
-            self.qPixmap7.append(croppedImage)
-            self.qPixmapVar7.append(None)
-
-            self.qPixmap.append([])
-            for j in range(self.psize ** 2):
-                if j == self.psize ** 2 - self.psize:
-                    self.qPixmap[i].append(QPixmap())
-                    continue
-                left = pos[0] + (j % self.psize) * croppedSize
-                top = pos[1] + int(j / self.psize) * croppedSize
-                bbox = (left, top, left + croppedSize, top + croppedSize)
-                croppedImage = im.crop(bbox)
-                self.qPixmap[i].append(croppedImage)
-            self.puzzle_select_limit += 1
-            i += 1
+        self.loadPuzzleImages()
 
         # 조각 이미지 표시할 라벨 로딩
         for i in range(self.psize ** 2):
@@ -573,25 +564,28 @@ class WindowClass(QMainWindow) :
 
         # 원본에서 크기 변형한 조각을 저장할 변수
         for i in range(self.psize ** 2):
-            if i == self.psize ** 2 - self.psize:
-                self.qPixmapVar[0][i] = self.emptyPixmap
-                self.qPixmapVar[1][i] = self.emptyPixmap
+            if self.pieceImages[self.puzzle_select][i] is None:
+                self.picePixmaps[0][i] = self.emptyPixmap
+                self.picePixmaps[1][i] = self.emptyPixmap
                 continue
 
-            img1 = self.qPixmap[self.puzzle_select][i].resize(
-                (self.adjustResolution(self.temp_size1), self.adjustResolution(self.temp_size1)), Image.ANTIALIAS)
-            img2 = self.qPixmap[self.puzzle_select][i].resize(
-                (self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2)), Image.ANTIALIAS)
-            self.qPixmapVar[0][i] = ImageQt.toqpixmap(img1)
-            self.qPixmapVar[1][i] = ImageQt.toqpixmap(img2)
+            img1 = self.pieceImages[self.puzzle_select][i].resize(
+                (self.adjustResolution(self.temp_size1), self.adjustResolution(self.temp_size1)),
+                Image.Resampling.LANCZOS)
+            img2 = self.pieceImages[self.puzzle_select][i].resize(
+                (self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2)),
+                Image.Resampling.LANCZOS)
+            self.picePixmaps[0][i] = ImageQt.toqpixmap(img1)
+            self.picePixmaps[1][i] = ImageQt.toqpixmap(img2)
 
         # 완성샷 이미지 로딩
-        for i in range(self.puzzle_select_limit + 1):
-            croppedImage = self.qPixmap7[i].resize(
+        for i in range(self.puzzleCount):
+            croppedImage = self.compImages[i].resize(
                 (self.adjustResolution(self.temp_size1) * self.psize,
                  self.adjustResolution(self.temp_size1) * self.psize),
-                Image.ANTIALIAS)
-            self.qPixmapVar7[i] = ImageQt.toqpixmap(croppedImage)
+                Image.Resampling.LANCZOS)
+            croppedPixmap = ImageQt.toqpixmap(croppedImage)
+            self.compPixmaps.append(croppedPixmap)
 
         # 각 라벨을 배치하고 이미지 할당
         for i in range(self.psize):
@@ -606,7 +600,7 @@ class WindowClass(QMainWindow) :
                                 self.adjustResolution(65) + int(i / self.psize) * self.adjustResolution(
                                     self.temp_size2))
             self.label2[i].resize(self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2))
-            self.label2[i].setPixmap(self.qPixmapVar[1][i])
+            self.label2[i].setPixmap(self.picePixmaps[1][i])
 
         for i in range(self.psize ** 2, 25):
             self.label[i].move(0, 901)
@@ -619,7 +613,7 @@ class WindowClass(QMainWindow) :
 
         # 선택한 퍼즐을 나타내는 이미지 로딩
         img = self.qPixmap3.resize(
-            (self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2)), Image.ANTIALIAS)
+            (self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2)), Image.Resampling.LANCZOS)
         self.qPixmapVar3 = ImageQt.toqpixmap(img)
 
         self.select = -1
@@ -645,30 +639,33 @@ class WindowClass(QMainWindow) :
 
     # 화살표 누르면 작동하는 함수
     def puzzleSelect(self, obj):
-        if self.enabledButton[8] == False:
+        if self.enabledButton[8] is False:
             return
         if obj == self.label6[0]:
             self.puzzle_select -= 1
             if self.puzzle_select < 0:
-                self.puzzle_select = self.puzzle_select_limit
+                self.puzzle_select = self.puzzleCount - 1
         else:
             self.puzzle_select += 1
-            if self.puzzle_select > self.puzzle_select_limit:
+            if self.puzzle_select > self.puzzleCount - 1:
                 self.puzzle_select = 0
 
         for i in range(self.psize ** 2):
-            if i == self.psize ** 2 - self.psize:
+            if self.pieceImages[self.puzzle_select][i] is None:
                 continue
-            img1 = self.qPixmap[self.puzzle_select][i].resize(
-                (self.adjustResolution(self.temp_size1), self.adjustResolution(self.temp_size1)), Image.ANTIALIAS)
-            img2 = self.qPixmap[self.puzzle_select][i].resize(
-                (self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2)), Image.ANTIALIAS)
-            self.qPixmapVar[0][i] = ImageQt.toqpixmap(img1)
-            self.qPixmapVar[1][i] = ImageQt.toqpixmap(img2)
+
+            img1 = self.pieceImages[self.puzzle_select][i].resize(
+                (self.adjustResolution(self.temp_size1), self.adjustResolution(self.temp_size1)),
+                Image.Resampling.LANCZOS)
+            img2 = self.pieceImages[self.puzzle_select][i].resize(
+                (self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2)),
+                Image.Resampling.LANCZOS)
+            self.picePixmaps[0][i] = ImageQt.toqpixmap(img1).copy()
+            self.picePixmaps[1][i] = ImageQt.toqpixmap(img2).copy()
 
             if self.assign_list[i]:
-                self.label[i].setPixmap(self.qPixmapVar[0][i])
-            self.label2[i].setPixmap(self.qPixmapVar[1][i])
+                self.label[i].setPixmap(self.picePixmaps[0][i])
+            self.label2[i].setPixmap(self.picePixmaps[1][i])
 
     # "시작" 버튼 누르면 생성
     class imageMoveThread(QThread):
@@ -693,7 +690,7 @@ class WindowClass(QMainWindow) :
             self.timer.stop()
             self.quit()
 
-    class imageMoveThread2(QThread): # 이미지를 부드럽게 이동
+    class imageMoveThread2(QThread):  # 이미지를 부드럽게 이동
         timeout = pyqtSignal()
 
         def __init__(self, x, y, label, timedata, obj):
@@ -702,12 +699,12 @@ class WindowClass(QMainWindow) :
             self.label = label
             self.x = x
             self.y = y
-            self.time = timedata # 0.5
-            self.defaultV = 125 * 1000 / 0.5 / self.time # 500
+            self.time = timedata  # 0.5
+            self.defaultV = 125 * 1000 / 0.5 / self.time  # 500
             self.t = 20
             self.count = 1
-            self.frame = self.time / self.t # 25
-            self.q = self.defaultV / self.frame # 20
+            self.frame = self.time / self.t  # 25
+            self.q = self.defaultV / self.frame  # 20
             self.dist = 0
             self.temp_size = self.main.adjustResolution(self.main.temp_size1)
             self.originXY = [self.main.adjustResolution(96) + self.x[0] * self.temp_size,
@@ -722,13 +719,15 @@ class WindowClass(QMainWindow) :
             self.originXY = [self.main.adjustResolution(96) + self.x[0] * self.temp_size,
                              self.main.adjustResolution(96) + self.x[1] * self.temp_size]
             if self.t * self.count <= self.time:
-                self.dist = self.temp_size * (math.log2(self.count) / math.log2(self.time/self.t))
-                 # 매트릭스와 ui 좌표는 서로 순서가 다름!!
-                self.label.move(int(self.originXY[1] + ((self.y[1] - self.x[1]) * self.dist)), int(self.originXY[0] + ((self.y[0] - self.x[0]) * self.dist)))
+                self.dist = self.temp_size * (math.log2(self.count) / math.log2(self.time / self.t))
+                # 매트릭스와 ui 좌표는 서로 순서가 다름!!
+                self.label.move(int(self.originXY[1] + ((self.y[1] - self.x[1]) * self.dist)),
+                                int(self.originXY[0] + ((self.y[0] - self.x[0]) * self.dist)))
 
                 self.count += 1
             else:
-                self.label.move(self.main.adjustResolution(96) + self.y[1] * self.temp_size, self.main.adjustResolution(96) + self.y[0] * self.temp_size)
+                self.label.move(self.main.adjustResolution(96) + self.y[1] * self.temp_size,
+                                self.main.adjustResolution(96) + self.y[0] * self.temp_size)
                 self.timeout.emit()
                 self.timer.stop()
                 self.quit()
@@ -759,7 +758,7 @@ class WindowClass(QMainWindow) :
         self.movethread2 = None
         if self.puzzle == self.answer:
             self.label8.move(self.adjustResolution(96), self.adjustResolution(96))
-            self.label8.setPixmap(self.qPixmapVar7[self.puzzle_select])
+            self.label8.setPixmap(self.compPixmaps[self.puzzle_select])
             if self.mode == 2:
                 self.label5[0].setPixmap(self.qPixmapVar4[0][0])
                 self.enabledButton[0] = True
@@ -777,7 +776,7 @@ class WindowClass(QMainWindow) :
             self.move_temp = []
 
     def unComplete(self):
-        self.label8.move(0,901)
+        self.label8.move(0, 901)
 
     def allIsOn(self):
         for i in range(self.psize ** 2):
@@ -786,7 +785,7 @@ class WindowClass(QMainWindow) :
         return True
 
     def imageMove(self, obj):
-        if self.mode == 0 and self.select != -1: # 배치중
+        if self.mode == 0 and self.select != -1:  # 배치중
             for i in range(self.psize ** 2):
                 if self.label[i] == obj:
                     To = self.findPiece(self.select, self.puzzle)
@@ -798,7 +797,7 @@ class WindowClass(QMainWindow) :
             Myy = obj.y()
             self.label[self.select].move(Myx, Myy)
             obj.move(Tox, Toy)
-            self.label[self.select].setPixmap(self.qPixmapVar[0][self.select])
+            self.label[self.select].setPixmap(self.picePixmaps[0][self.select])
             self.swap(To, My, self.puzzle)
             self.assign_list[self.select] = 1
             if self.allIsOn():
@@ -806,7 +805,7 @@ class WindowClass(QMainWindow) :
                 self.inst_num = 1
                 self.label5[5].setPixmap(self.qPixmapVar4[5][0])
                 self.enabledButton[5] = True
-        elif self.mode == 1 and self.can_move == 1: # 실행중
+        elif self.mode == 1 and self.can_move == 1:  # 실행중
             for i in range(self.psize ** 2):
                 if self.label[i] == obj:
                     temp = self.findPiece(i, self.puzzle)
@@ -846,8 +845,8 @@ class WindowClass(QMainWindow) :
     def compileButton(self):
         if self.enabledButton[5] is False:
             return
-        if self.mode == 0: # 편집 -> 배치 완료
-            if self.size_select == 0: # 3x3 배치에서만 풀이 가능
+        if self.mode == 0:  # 편집 -> 배치 완료
+            if self.size_select == 0:  # 3x3 배치에서만 풀이 가능
                 self.label5[4].setPixmap(self.qPixmapVar4[4][0])
                 self.enabledButton[4] = True
             else:
@@ -866,7 +865,7 @@ class WindowClass(QMainWindow) :
             self.enabledButton[9] = False
             self.closeSetting()
             self.mode = 1
-            #self.opacity_effect.setOpacity(0)
+            # self.opacity_effect.setOpacity(0)
             self.alpha.move(0, 901)
             self.select = -1
             self.puzzle_origin = self.solveThread.puzzleCopy(self, self.puzzle)
@@ -878,7 +877,7 @@ class WindowClass(QMainWindow) :
                 self.inst_num = 6
 
             self.inst_num = 2
-        elif self.mode == 1: # 배치완료 -> 편집
+        elif self.mode == 1:  # 배치완료 -> 편집
             self.unComplete()
             self.label5[0].setPixmap(self.qPixmapVar4[0][1])
             self.enabledButton[0] = False
@@ -911,7 +910,7 @@ class WindowClass(QMainWindow) :
             self.mode = 0
             self.label4.setPixmap(self.qPixmapVar2[1])
             self.inst_num = 1
-        elif self.can_move == 1: # 해답 -> 배치완료
+        elif self.can_move == 1:  # 해답 -> 배치완료
             if self.solvethread is not None:
                 self.solvethread.stop_working()
                 self.solvethread = None
@@ -933,14 +932,16 @@ class WindowClass(QMainWindow) :
             self.label5[7].setPixmap(self.qPixmapVar4[7][1])
             self.enabledButton[7] = False
             self.mode = 1
-            #self.opacity_effect.setOpacity(0)
+            # self.opacity_effect.setOpacity(0)
             self.alpha.move(0, 901)
             self.select = -1
             self.puzzle = self.solveThread.puzzleCopy(self, self.puzzle_origin)
             for i in range(self.psize):
                 for j in range(self.psize):
-                    self.label[self.puzzle[i][j]].move(self.adjustResolution(96) + j * self.adjustResolution(self.temp_size1), self.adjustResolution(96) + i * self.adjustResolution(self.temp_size1))
-                    self.label[self.puzzle[i][j]].setPixmap(self.qPixmapVar[0][self.puzzle[i][j]])
+                    self.label[self.puzzle[i][j]].move(
+                        self.adjustResolution(96) + j * self.adjustResolution(self.temp_size1),
+                        self.adjustResolution(96) + i * self.adjustResolution(self.temp_size1))
+                    self.label[self.puzzle[i][j]].setPixmap(self.picePixmaps[0][self.puzzle[i][j]])
             if self.size_select == 0:
                 self.label4.setPixmap(self.qPixmapVar2[2])
                 self.inst_num = 2
@@ -948,13 +949,13 @@ class WindowClass(QMainWindow) :
                 self.label4.setPixmap(self.qPixmapVar2[6])
                 self.inst_num = 6
 
-    def getH(self, puzzle): # h(n) 값을 반환
+    def getH(self, puzzle):  # h(n) 값을 반환
         count = 0
         for i in range(self.psize ** 2):
             if i == self.psize ** 2 - self.psize:
                 continue
             a = self.findPiece(i, puzzle)
-            count += abs(a[0] - int(i/self.psize)) + abs(a[1] - i%self.psize)
+            count += abs(a[0] - int(i / self.psize)) + abs(a[1] - i % self.psize)
         return count
 
     def swap(self, x, y, puzzle):  # x와 y의 위치를 서로 바꿈
@@ -977,17 +978,17 @@ class WindowClass(QMainWindow) :
         blank = self.findPiece(self.psize ** 2 - self.psize, puzzle)
         block = None
         if self.psize == 3:
-            limit = random.randrange(10,20)
+            limit = random.randrange(10, 20)
         elif self.psize == 4:
-            limit = random.randrange(30,40)
+            limit = random.randrange(30, 40)
         elif self.psize == 5:
-            limit = random.randrange(70,80)
+            limit = random.randrange(70, 80)
         while True:
             h = self.getH(puzzle)
             if h >= limit:
                 break
             temp_list = []
-            if blank[0] < self.psize - 1: # 아래로 이동
+            if blank[0] < self.psize - 1:  # 아래로 이동
                 temp = [blank[0] + 1, blank[1]]
                 if not temp == block:
                     temp_list.append(temp)
@@ -1004,7 +1005,7 @@ class WindowClass(QMainWindow) :
                 if not temp == block:
                     temp_list.append(temp)
 
-            select = temp_list[random.randrange(0,len(temp_list))]
+            select = temp_list[random.randrange(0, len(temp_list))]
             self.swap(blank, select, puzzle)
             block = select
             blank = select
@@ -1050,7 +1051,8 @@ class WindowClass(QMainWindow) :
             self.thread_imageMove(temp)
 
     def nextButton(self):
-        if self.enabledButton[3] is True and self.way_pos < len(self.way) - 1 and self.can_move == 1 and self.movethread2 is None:
+        if self.enabledButton[3] is True and self.way_pos < len(
+                self.way) - 1 and self.can_move == 1 and self.movethread2 is None:
             self.unComplete()
             self.way_pos += 1
             temp = self.way[self.way_pos]
@@ -1070,8 +1072,10 @@ class WindowClass(QMainWindow) :
         self.puzzle_shuffle(self.puzzle)
         for i in range(self.psize):
             for j in range(self.psize):
-                self.label[self.puzzle[i][j]].move(self.adjustResolution(96) + j * self.adjustResolution(self.temp_size1), self.adjustResolution(96) + i * self.adjustResolution(self.temp_size1))
-                self.label[self.puzzle[i][j]].setPixmap(self.qPixmapVar[0][self.puzzle[i][j]])
+                self.label[self.puzzle[i][j]].move(
+                    self.adjustResolution(96) + j * self.adjustResolution(self.temp_size1),
+                    self.adjustResolution(96) + i * self.adjustResolution(self.temp_size1))
+                self.label[self.puzzle[i][j]].setPixmap(self.picePixmaps[0][self.puzzle[i][j]])
         self.assign_list = [1] * (self.psize ** 2)
         self.label4.setPixmap(self.qPixmapVar2[1])
         self.inst_num = 1
@@ -1297,7 +1301,7 @@ class WindowClass(QMainWindow) :
 
         self.assign_list = [0, 0, 0, 0, 0, 0, 1, 0, 0]
         puzzle_list = [6, 6, 6, 6, 6, 6, 6, 6, 6]
-        for i in range(len(ret_list)) :
+        for i in range(len(ret_list)):
             retIndex = self.maxIndex(ret_list)
             num = int(retIndex / 9)
             pos = retIndex % 9
@@ -1319,15 +1323,17 @@ class WindowClass(QMainWindow) :
             if num == 6:
                 continue
             pos_x = self.findPiece(num, self.puzzle)
-            pos_y = [int(i/3), i%3]
+            pos_y = [int(i / 3), i % 3]
             self.swap(pos_x, pos_y, self.puzzle)
             self.assign_list[i] = 1
 
         for i in range(3):
             for j in range(3):
-                if self.assign_list[i*3+j]:
-                    self.label[self.puzzle[i][j]].move(self.adjustResolution(96) + j * self.adjustResolution(self.temp_size1), self.adjustResolution(96) + i * self.adjustResolution(self.temp_size1))
-                    self.label[self.puzzle[i][j]].setPixmap(self.qPixmapVar[0][self.puzzle[i][j]])
+                if self.assign_list[i * 3 + j]:
+                    self.label[self.puzzle[i][j]].move(
+                        self.adjustResolution(96) + j * self.adjustResolution(self.temp_size1),
+                        self.adjustResolution(96) + i * self.adjustResolution(self.temp_size1))
+                    self.label[self.puzzle[i][j]].setPixmap(self.picePixmaps[0][self.puzzle[i][j]])
                 else:
                     self.label[self.puzzle[i][j]].setPixmap(self.emptyPixmap)
 
@@ -1342,8 +1348,8 @@ class WindowClass(QMainWindow) :
             self.label5[5].setPixmap(self.qPixmapVar4[5][1])
             self.enabledButton[5] = False
 
-if __name__ == "__main__" :
 
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     myWindow = WindowClass()
     myWindow.show()
