@@ -539,6 +539,7 @@ class WindowClass(QMainWindow):
         self.temp_size1 = int(624 / self.psize)
         self.temp_size2 = int(417 / self.psize)
 
+        # 퍼즐에 쓰는 리스트 초기화
         self.puzzle = []
         self.answer = []
         for i in range(self.psize):
@@ -553,9 +554,10 @@ class WindowClass(QMainWindow):
         self.compImages = []
         self.compPixmaps = []
 
+        # 퍼즐이미지 다시 불러오기
         self.loadPuzzleImages()
 
-        # 조각 이미지 표시할 라벨 로딩
+        # 조각 이미지 표시할 라벨 초기화
         for i in range(self.psize ** 2):
             self.label[i].setPixmap(self.emptyPixmap)
 
@@ -575,8 +577,8 @@ class WindowClass(QMainWindow):
             img2 = self.pieceImages[self.puzzle_select][i].resize(
                 (self.adjustResolution(self.temp_size2), self.adjustResolution(self.temp_size2)),
                 Image.Resampling.LANCZOS)
-            self.picePixmaps[0][i] = ImageQt.toqpixmap(img1)
-            self.picePixmaps[1][i] = ImageQt.toqpixmap(img2)
+            self.picePixmaps[0][i] = ImageQt.toqpixmap(img1).copy()
+            self.picePixmaps[1][i] = ImageQt.toqpixmap(img2).copy()
 
         # 완성샷 이미지 로딩
         for i in range(self.puzzleCount):
